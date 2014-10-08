@@ -8,7 +8,7 @@ const ARROW_KEY_LEFT = 37;
 const ARROW_KEY_RIGHT = 39;
 const SPACE_KEY = 32;
 
-var canvas, stage, paddle, puck, board, scoreTxt, livesTxt, messageTxt, messageInterval;
+var canvas, stage, assets, paddle, puck, board, scoreTxt, livesTxt, messageTxt, messageInterval;
 var leftWall, rightWall, ceiling, floor;
 var leftKeyDown = false;
 var rightKeyDown = false;
@@ -39,10 +39,17 @@ var levels = [
 ];
 
 function init() {
-    canvas = document.getElementById('canvas');
-    stage = new createjs.Stage(canvas);
-    newGame();
-    startGame();
+    canvas = document.getElementById('canvas'); // reference canvas element
+    stage = new createjs.Stage(canvas);         // initialize stage
+    
+//    assets = new createjs.LoadQueue();          // create a LoadQueue
+//    assets.installPlugin(createjs.Sound)        // install the Sound plugin for LoadQueue
+//    assets.loadManifest([                       // load the assets manifest
+//    ]);
+//    assets.on("complete", function(){           // once assets have loaded, start a new game
+        newGame();
+        startGame();
+//    })
 }
 function newGame() {
     buildWalls();
@@ -149,17 +156,18 @@ function handleKeyUp(e) {
             break;
     }
 }
+// create a new level by drawing 2 rows of 10 bricks at the top of the play area:
 function newLevel() {
-    var i, brick, freeLifeTxt;
+    var i, brick, powerUpTxt;
     var data = levels[level];
     var xPos = WALL_THICKNESS;
     var yPos = WALL_THICKNESS;
-    var freeLife = Math.round(Math.random() * 20);
+    var powerUp = Math.round(Math.random() * 20);
     paddleHits = 0;
     shiftBricksDown();
     for (i = 0; i < 20; i++) {
         brick = new createjs.Shape();
-        brick.graphics.beginFill(i == freeLife ? '#009900' : data.color);
+        brick.graphics.beginFill(i == powerUp ? '#009900' : data.color);
         brick.graphics.drawRect(0, 0, 76, 20);
         brick.graphics.endFill();
         brick.x = xPos;
@@ -167,21 +175,21 @@ function newLevel() {
         brick.width = 76;
         brick.height = 20;
         brick.points = data.points;
-        brick.freeLife = false;
+        brick.powerUp = false;
         bricks.push(brick);
         stage.addChild(brick);
-        if (i == freeLife) {
-            freeLifeTxt = new createjs.Text('1UP', '12px Times', '#fff');
-            freeLifeTxt.x = brick.x + (brick.width / 2);
-            freeLifeTxt.y = brick.y + 4;
-            freeLifeTxt.width = brick.width;
-            freeLifeTxt.textAlign = 'center';
-            brick.freeLife = freeLifeTxt;
-            stage.addChild(freeLifeTxt);
+        if (i == powerUp) {
+            powerUpTxt = new createjs.Text('1UP', '12px Times', '#fff');
+            powerUpTxt.x = brick.x + (brick.width / 2);
+            powerUpTxt.y = brick.y + 4;
+            powerUpTxt.width = brick.width;
+            powerUpTxt.textAlign = 'center';
+            brick.powerUp = powerUpTxt;
+            stage.addChild(powerUpTxt);
         }
         xPos += brick.width;
         if (xPos > (brick.width * 10)) {
-            xPos = WALL_THICKNESS
+            xPos = WALL_THICKNESS;
             yPos += brick.height;
         }
     }
@@ -197,17 +205,19 @@ function shiftBricksDown() {
     for (i = 0; i < len; i++) {
         brick = bricks[i];
         brick.y += shiftHeight;
-        if (brick.freeLife) {
-            brick.freeLife.y += shiftHeight;
+        if (brick.powerUp) {
+            brick.powerUp.y += shiftHeight;
         }
     }
 }
+// update the state of the game objects:
 function update() {
     updatePaddle();
     updatePuck();
     checkPaddle();
     checkBricks();
 }
+// update the position of the paddle:
 function updatePaddle() {
     var nextX = paddle.x;
     if (leftKeyDown) {
@@ -224,6 +234,7 @@ function updatePaddle() {
     }
     paddle.nextX = nextX;
 }
+// update the position of the puck:
 function updatePuck() {
     var nextX = puck.x + puck.velx;
     var nextY = puck.y + puck.vely;
@@ -242,6 +253,7 @@ function updatePuck() {
     puck.nextX = nextX;
     puck.nextY = nextY;
 }
+// handle collisions between the puck and the paddle:
 function checkPaddle() {
     if (puck.vely > 0 && puck.isAlive && puck.nextY > (paddle.y - paddle.height) && puck.nextX >= paddle.x && puck.nextX <= (paddle.x + paddle.width)) {
         puck.nextY = paddle.y - puck.height;
@@ -250,6 +262,7 @@ function checkPaddle() {
         puck.vely *= -1;
     }
 }
+// handle collisions between the puck and the bricks:
 function checkBricks() {
     if (!puck.isAlive) {
         return;
@@ -260,10 +273,10 @@ function checkBricks() {
         if (puck.nextY >= brick.y && puck.nextY <= (brick.y + brick.height) && puck.nextX >= brick.x && puck.nextX <= (brick.x + brick.width)) {
             score += brick.points;
             combo++;
-            if (brick.freeLife) {
+            if (brick.powerUp) {
                 lives++;
-                createjs.Tween.get(brick.freeLife)
-                    .to({alpha:0, y:brick.freeLife.y - 100}, 1000)
+                createjs.Tween.get(brick.powerUp)
+                    .to({alpha:0, y:brick.powerUp.y - 100}, 1000)
                     .call(function () {
                         stage.removeChild(this);
                     });
@@ -355,8 +368,8 @@ function removeBricks() {
     var i, brick;
     for (i = 0; i < bricks.length; i++) {
         brick = bricks[i];
-        if (brick.freeLife) {
-            stage.removeChild(brick.freeLife);
+        if (brick.powerUp) {
+            stage.removeChild(brick.powerUp);
         }
         stage.removeChild(brick);
     }
