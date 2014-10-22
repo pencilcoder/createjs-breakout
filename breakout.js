@@ -115,8 +115,8 @@ function buildPuck() {
     puck.graphics.beginFill('#FFFFFF').drawRect(0, 0, 10, 10);
     puck.width = 10;
     puck.height = 10;
-    puck.x = canvas.width - 100;
-    puck.y = 160;
+    puck.x = paddle.x + paddle.width/2;
+    puck.y = paddle.y - puck.height;
     puck.velx = PUCK_SPEED;
     puck.vely = PUCK_SPEED;
     puck.isAlive = true;
@@ -317,8 +317,8 @@ function evalPuck() {
         puck.isAlive = false;
     }
     if (puck.y > canvas.height + 200) {
-        puck.y = bricks[0].y + bricks[0].height + 40;
-        puck.x = stage.canvas.width / 2;
+        puck.y = paddle.y - puck.height;
+        puck.x = paddle.x + paddle.width/2;
         puck.velx *= -1;
         puck.isAlive = true;
         combo = 0;
